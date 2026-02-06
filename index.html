@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>廚藝教室借用系統</title>
+    <style>
+        :root { --primary-color: #27ae60; --secondary-color: #2c3e50; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f8f9fa; display: flex; justify-content: center; padding: 20px; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h2 { color: var(--secondary-color); text-align: center; margin-bottom: 25px; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; margin-bottom: 15px; }
+        button { width: 100%; padding: 15px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.3s; }
+        button:disabled { background-color: #95a5a6; cursor: wait; }
+        .status-msg { text-align: center; margin-top: 15px; font-weight: bold; min-height: 1.2em; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🍳 廚藝教室借用登記</h2>
+    
+    <label>借用班級</label>
+    <input type="text" id="userClass" placeholder="例如：餐飲二甲">
+
+    <label>借用人姓名</label>
+    <input type="text" id="userName" placeholder="請輸入姓名">
+
+    <label>預約日期</label>
+    <input type="date" id="bookingDate">
+
+    <label>預約時段</label>
+    <select id="timeSlot">
+        <option value="09:30-12:00">09:30-12:00</option>
+        <option value="13:00-14:00">13:00-14:00</option>
+        <option value="14:00-16:00">14:00-16:00</option>
+        <option value="16:00-18:00">16:00-18:00</option>
+    </select>
+
+    <button id="submitBtn" onclick="sendData()">確認提交登記</button>
+    <div id="status" class="status-msg"></div>
+</div>
+
+<script>
+    // https://docs.google.com/spreadsheets/d/1RFXW-WbL3VCGx5oVqmNTgowPukv-TvFuS1zLYe-L7jo/edit?usp=sharing
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzeDZD4JOVO-awHSwwZvKPR5m96I12r63vY4f36SCFLM4zFbgPikldhQ9JM-vZWX22v/exec'; 
+
+    async function sendData() {
+        const uClass = document.getElementById('userClass').value;
+        const uName = document.getElementById('userName').value;
+        const uDate = document.getElementById('bookingDate').value;
+        const uTime = document.getElementById('timeSlot').value;
+        const btn = document.getElementById('submitBtn');
+        const statusDiv = document.getElementById('status');
+
+        // 1. 基本檢查
+        if (!uClass || !uName || !uDate) {
+            alert("請填寫完整資訊（班級、姓名、日期）！");
+            return;
+        }
+
+        // 2. 準備介面狀態
+        btn.disabled = true;
+        btn.innerText = "連線檢查中...";
+        statusDiv.innerText = "正在檢查時段是否重複...";
+        statusDiv.style.color = "#3498db";
+
+        try {
+            // 3. 發送請求給 Google Script
+            const response = await fetch(scriptURL, {
+                method: 'POST',
+                // 注意：這裡不使用 no-cors 才能讀取回傳結果
+                body: JSON.stringify({
+                    class: uClass,
+                    name: uName,
+                    date: uDate,
+                    time: uTime
+                })
+            });
+
+            const result = await response.json();
+
+            // 4. 根據 Google 回傳結果顯示訊息
+            if (result.result === "success") {
+                alert(result.message);
+                statusDiv.innerText = "預約成功！";
+                statusDiv.style.color = "#27ae60";
+                // 成功後清空部分欄位
+                document.getElementById('userName').value = "";
+            } else {
+                // 這裡就是「防撞機制」生效的地方
+                alert(result.message); 
+                statusDiv.innerText = "預約失敗，時段已被佔用。";
+                statusDiv.style.color = "#e74c3c";
+            }
+
+        } catch (error) {
+            console.error('Error!', error);
+            // 如果是在電腦本地開啟檔案，有時會因為 CORS 限制跳到這裡
+            alert("連線回報：若試算表已出現資料即成功，若無則代表時段重複或 URL 錯誤。");
+            statusDiv.innerText = "連線異常，請確認網路或 URL 版本。";
+            statusDiv.style.color = "#f39c12";
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "確認提交登記";
+        }
+    }
+</script>
+
+</body>
+</html>
