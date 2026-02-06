@@ -1,3 +1,4 @@
+[index.html](https://github.com/user-attachments/files/25120011/index.html)
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -43,7 +44,7 @@
 </div>
 
 <script>
-    // 您的 Google 部署網址
+    // 已自動為您填入部署網址
     const scriptURL = 'https://script.google.com/macros/s/AKfycbxc-2_3teucTv9O7iEYMdS8gKf3g0GQqjZDLy1DsqLRh61uJtD8S5IH_NlTUnPDvYCJ/exec';
 
     async function send() {
@@ -64,6 +65,7 @@
         btn.innerText = "連線中...";
 
         try {
+            // 發送資料至 Google Sheets
             const response = await fetch(scriptURL, {
                 method: 'POST',
                 body: JSON.stringify(data)
@@ -72,15 +74,15 @@
             const result = await response.json();
 
             if (result.result === "success") {
-                alert(result.message);
-                document.getElementById('userName').value = ""; 
+                alert(result.message); // 跳出「✅ 預約成功！」
+                document.getElementById('userName').value = ""; // 清空姓名
             } else {
-                // 防撞機制提示
-                alert(result.message); 
+                // 這就是防撞機制生效的地方
+                alert(result.message); // 跳出「❌ 該時段已被預約！」
             }
         } catch (error) {
             console.error('Error!', error);
-            alert("連線成功！請至試算表確認。若無新紀錄代表時段已被預約。");
+            alert("連線成功！請至試算表確認資料。若無新資料代表該時段已被預約。");
         } finally {
             btn.disabled = false;
             btn.innerText = "送出預約登記";
